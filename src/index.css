@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Georgia:ital@0;1&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-kingstar-bg:     #121212;
+  --color-kingstar-panel:  #1e1e1e;
+  --color-kingstar-border: #2a2a2a;
+  --color-kingstar-cyan:   #38bdf8;
+  --color-kingstar-yellow: #facc15;
+  --color-kingstar-red:    #ef4444;
+  --color-kingstar-green:  #22c55e;
+}
+
+:root {
+  --bg-app:      #0f0f0f;
+  --bg-sidebar:  #161616;
+  --bg-card:     #1a1a1a;
+  --border:      #242424;
+  --text-muted:  #5a6a7a;
+  --text-secondary: #8b9dc3;
+  --font-mono:   'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-app);
+    color: #e5e5e5;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * { box-sizing: border-box; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+  input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+  input, select, textarea { outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: #38bdf8 !important; }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

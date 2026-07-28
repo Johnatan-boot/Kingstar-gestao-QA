@@ -1,0 +1,6 @@
+{
+  "name": "KINGSTAR GESTÃO QA",
+  "description": "Sistema completo para área de Qualidade (QA) com CRUD de estoque e painel de gestão gráfica",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
