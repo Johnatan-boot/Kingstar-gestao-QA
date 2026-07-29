@@ -25,11 +25,11 @@ async function createServer() {
   });
 
   app.post('/api/inventory', async (req, res) => {
-    const { fornecedor, material, medida, quantidade, status } = req.body;
+    const { fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status } = req.body;
     try {
       await dbRun(
-        'INSERT INTO inventory (fornecedor, material, medida, quantidade, status) VALUES (?, ?, ?, ?, ?)',
-        [fornecedor, material, medida, quantidade || 0, status || 'Ativo']
+        'INSERT INTO inventory (fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [fornecedor, material, medida, quantidade || 0, quantidade_minima || 10, quantidade_maxima || 100, status || 'Ativo']
       );
       res.status(201).json({ message: 'Item created' });
     } catch (error) {
@@ -38,12 +38,12 @@ async function createServer() {
   });
 
   app.put('/api/inventory/:id', async (req, res) => {
-    const { fornecedor, material, medida, quantidade, status } = req.body;
+    const { fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status } = req.body;
     const { id } = req.params;
     try {
       await dbRun(
-        'UPDATE inventory SET fornecedor = ?, material = ?, medida = ?, quantidade = ?, status = ? WHERE id = ?',
-        [fornecedor, material, medida, quantidade, status, id]
+        'UPDATE inventory SET fornecedor = ?, material = ?, medida = ?, quantidade = ?, quantidade_minima = ?, quantidade_maxima = ?, status = ? WHERE id = ?',
+        [fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status, id]
       );
       res.json({ message: 'Item updated' });
     } catch (error) {
@@ -82,7 +82,7 @@ async function createServer() {
     try {
       await dbRun(
         'INSERT INTO movements (inventory_id, tipo, quantidade, status, solicitacao) VALUES (?, ?, ?, ?, ?)',
-        [inventory_id, tipo, quantidade, status, solicitacao]
+        [inventory_id, tipo, quantidade, status || null, solicitacao || null]
       );
       
       // Update inventory quantity
@@ -149,15 +149,34 @@ async function createServer() {
   });
 
   app.put('/api/purchase-requests/:id', async (req, res) => {
-    const { status } = req.body;
+    const { status, received_quantity, nf } = req.body;
     const { id } = req.params;
     try {
-      await dbRun(
-        'UPDATE purchase_requests SET status = ? WHERE id = ?',
-        [status, id]
-      );
+      if (status === 'Recebido') {
+        // Obter a solicitação
+        const reqData = await dbGet('SELECT * FROM purchase_requests WHERE id = ?', [id]);
+        if (!reqData) {
+          return res.status(404).json({ error: 'Purchase request not found' });
+        }
+        
+        // Atualizar status
+        await dbRun('UPDATE purchase_requests SET status = ? WHERE id = ?', ['Recebido', id]);
+        
+        // Registrar movimentação
+        const qty = received_quantity || reqData.quantidade;
+        await dbRun(
+          'INSERT INTO movements (inventory_id, tipo, quantidade, status, solicitacao) VALUES (?, ?, ?, ?, ?)',
+          [reqData.inventory_id, 'ENTRADA', qty, 'Recebimento de Compra' + (nf ? ` (NF: ${nf})` : ''), 'REQ-' + id]
+        );
+        
+        // Atualizar estoque
+        await dbRun('UPDATE inventory SET quantidade = quantidade + ? WHERE id = ?', [qty, reqData.inventory_id]);
+      } else {
+        await dbRun('UPDATE purchase_requests SET status = ? WHERE id = ?', [status, id]);
+      }
       res.json({ message: 'Purchase request updated' });
     } catch (error) {
+      console.error(error);
       res.status(500).json({ error: 'Failed to update purchase request' });
     }
   });

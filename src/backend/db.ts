@@ -83,6 +83,8 @@ export async function initDB() {
           material VARCHAR(255) NOT NULL,
           medida VARCHAR(255),
           quantidade INT DEFAULT 0,
+          quantidade_minima INT DEFAULT 10,
+          quantidade_maxima INT DEFAULT 100,
           status VARCHAR(255) DEFAULT 'Ativo',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -119,6 +121,8 @@ export async function initDB() {
           material TEXT NOT NULL,
           medida TEXT,
           quantidade INTEGER DEFAULT 0,
+          quantidade_minima INTEGER DEFAULT 10,
+          quantidade_maxima INTEGER DEFAULT 100,
           status TEXT DEFAULT 'Ativo',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )

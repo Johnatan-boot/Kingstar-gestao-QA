@@ -3,22 +3,28 @@ import { Activity, Box, Search, RefreshCw, Plus, Edit2, Trash2, Check, X } from 
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: (string | undefined | null | false)[]) {
+export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
+import { ReportsView } from './components/ReportsView';
+import { MovementsView } from './components/MovementsView';
+import { PurchaseRequestsView } from './components/PurchaseRequestsView';
+
 // Types
-type InventoryItem = {
+export type InventoryItem = {
   id: number;
   fornecedor: string;
   material: string;
   medida: string;
   quantidade: number;
+  quantidade_minima: number;
+  quantidade_maxima: number;
   status: string;
   created_at: string;
 };
 
-type Movement = {
+export type Movement = {
   id: number;
   inventory_id: number;
   tipo: 'ENTRADA' | 'SAIDA';
@@ -41,21 +47,25 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [stats, setStats] = useState<Stats | null>(null);
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, movementsRes] = await Promise.all([
+      const [statsRes, movementsRes, itemsRes] = await Promise.all([
         fetch('/api/stats'),
-        fetch('/api/movements')
+        fetch('/api/movements'),
+        fetch('/api/inventory')
       ]);
       const statsData = await statsRes.json();
       const movementsData = await movementsRes.json();
+      const itemsData = await itemsRes.json();
       
       setStats(statsData.error ? null : statsData);
       setMovements(Array.isArray(movementsData) ? movementsData : []);
+      setItems(Array.isArray(itemsData) ? itemsData : []);
       setLastSync(new Date().toLocaleTimeString());
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -132,8 +142,10 @@ export default function App() {
         <div className="flex-1 overflow-auto p-8">
           {activeTab === 'Dashboard' && <Dashboard stats={stats} movements={movements} lastSync={lastSync} onRefresh={fetchData} />}
           {activeTab === 'Estoque Geral' && <InventoryView onRefresh={fetchData} />}
-          {activeTab === 'Solicitações de Compra' && <PurchaseRequestsView />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && (
+          {activeTab === 'Movimentações' && <MovementsView movements={movements} items={items} onRefresh={fetchData} />}
+          {activeTab === 'Solicitações de Compra' && <PurchaseRequestsView onRefreshParent={fetchData} />}
+          {activeTab === 'Relatórios' && <ReportsView items={items} movements={movements} />}
+          {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] glass-panel rounded-lg border border-[var(--border)] border-dashed p-8 text-center bg-[#1a1a1a]/50">
               <div className="w-16 h-16 rounded-full bg-[var(--color-kingstar-cyan)]/10 flex items-center justify-center mb-4">
                 <Box size={32} className="text-[var(--color-kingstar-cyan)] opacity-70" />
@@ -333,6 +345,8 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
     material: '',
     medida: '',
     quantidade: 0,
+    quantidade_minima: 10,
+    quantidade_maxima: 100,
     status: 'Ativo'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -379,7 +393,7 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
       }
       setIsFormOpen(false);
       setEditingId(null);
-      setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, status: 'Ativo' });
+      setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, quantidade_minima: 10, quantidade_maxima: 100, status: 'Ativo' });
       await fetchInventory();
       onRefresh();
     } catch (e) {
@@ -396,6 +410,8 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
       material: item.material,
       medida: item.medida,
       quantidade: item.quantidade,
+      quantidade_minima: item.quantidade_minima || 10,
+      quantidade_maxima: item.quantidade_maxima || 100,
       status: item.status
     });
     setIsFormOpen(true);
@@ -435,7 +451,7 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
           </div>
         </div>
         <button 
-          onClick={() => { setEditingId(null); setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, status: 'Ativo' }); setIsFormOpen(true); }}
+          onClick={() => { setEditingId(null); setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, quantidade_minima: 10, quantidade_maxima: 100, status: 'Ativo' }); setIsFormOpen(true); }}
           className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-4 py-2 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center gap-2 shadow-[0_0_10px_rgba(56,189,248,0.2)]"
         >
           <Plus size={16} /> NOVO ITEM
@@ -472,6 +488,16 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
                   <div>
                     <label className="block text-[10px] uppercase text-[#8b9dc3] font-semibold mb-1">Quantidade</label>
                     <input type="number" required min="0" value={formData.quantidade} onChange={e => setFormData({...formData, quantidade: Number(e.target.value)})} className="w-full bg-[#121212] border border-[var(--border)] rounded px-3 py-2 text-sm text-white focus:border-[var(--color-kingstar-cyan)] transition-colors font-mono" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase text-[#8b9dc3] font-semibold mb-1">Qtd Mínima (Ruptura)</label>
+                    <input type="number" required min="0" value={formData.quantidade_minima} onChange={e => setFormData({...formData, quantidade_minima: Number(e.target.value)})} className="w-full bg-[#121212] border border-[var(--border)] rounded px-3 py-2 text-sm text-white focus:border-[var(--color-kingstar-cyan)] transition-colors font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase text-[#8b9dc3] font-semibold mb-1">Qtd Máxima (Saudável)</label>
+                    <input type="number" required min="1" value={formData.quantidade_maxima} onChange={e => setFormData({...formData, quantidade_maxima: Number(e.target.value)})} className="w-full bg-[#121212] border border-[var(--border)] rounded px-3 py-2 text-sm text-white focus:border-[var(--color-kingstar-cyan)] transition-colors font-mono" />
                   </div>
                 </div>
               </div>
@@ -517,25 +543,53 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
               <th className="p-4 w-16">ID</th>
               <th className="p-4">Material</th>
               <th className="p-4">Fornecedor</th>
-              <th className="p-4">Medida</th>
               <th className="p-4 text-right">Estoque</th>
+              <th className="p-4 text-right">Mín</th>
+              <th className="p-4 text-right">Máx</th>
+              <th className="p-4 text-center">Saúde</th>
               <th className="p-4">Status</th>
               <th className="p-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
             {loading ? (
-              <tr><td colSpan={7} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Carregando dados...</td></tr>
+              <tr><td colSpan={9} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Carregando dados...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={7} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Nenhum material cadastrado</td></tr>
+              <tr><td colSpan={9} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Nenhum material cadastrado</td></tr>
             ) : (
-              items.map(item => (
+              items.map(item => {
+                const min = item.quantidade_minima || 0;
+                const max = item.quantidade_maxima || 1;
+                const pct = Math.min(100, Math.round((item.quantidade / max) * 100));
+                let healthColor = 'text-[var(--color-kingstar-green)]';
+                let healthBg = 'bg-[var(--color-kingstar-green)]';
+                let healthLabel = 'SAUDÁVEL';
+                if (item.quantidade <= min) {
+                  healthColor = 'text-[var(--color-kingstar-red)]';
+                  healthBg = 'bg-[var(--color-kingstar-red)]';
+                  healthLabel = 'RUPTURA';
+                } else if (item.quantidade > max) {
+                  healthColor = 'text-[var(--color-kingstar-yellow)]';
+                  healthBg = 'bg-[var(--color-kingstar-yellow)]';
+                  healthLabel = 'EXCESSO';
+                }
+
+                return (
                 <tr key={item.id} className="hover:bg-white/5 transition-colors group">
                   <td className="p-4 font-mono text-xs text-[#5a6a7a]">#{(item.id || 0).toString().padStart(4, '0')}</td>
-                  <td className="p-4 font-medium text-white">{item.material}</td>
+                  <td className="p-4 font-medium text-white">{item.material} <span className="text-[#5a6a7a] text-xs font-normal">({item.medida || '-'})</span></td>
                   <td className="p-4 text-[#8b9dc3]">{item.fornecedor || '-'}</td>
-                  <td className="p-4 text-[#8b9dc3]">{item.medida || '-'}</td>
                   <td className="p-4 font-mono text-right font-medium text-[var(--color-kingstar-cyan)]">{item.quantidade}</td>
+                  <td className="p-4 font-mono text-right text-[#5a6a7a]">{min}</td>
+                  <td className="p-4 font-mono text-right text-[#5a6a7a]">{max}</td>
+                  <td className="p-4 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-full bg-[#121212] rounded-full h-1.5 border border-[var(--border)] overflow-hidden">
+                        <div className={`h-full ${healthBg}`} style={{ width: `${pct}%` }}></div>
+                      </div>
+                      <span className={`text-[9px] font-bold tracking-wider ${healthColor}`}>{pct}% - {healthLabel}</span>
+                    </div>
+                  </td>
                   <td className="p-4">
                     <span className="text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wide border text-[var(--color-kingstar-green)] border-[var(--color-kingstar-green)]/20 bg-[var(--color-kingstar-green)]/5">
                       {item.status}
@@ -548,7 +602,7 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
                     </div>
                   </td>
                 </tr>
-              ))
+              )})
             )}
           </tbody>
         </table>
@@ -566,177 +620,4 @@ interface PurchaseRequest {
   created_at: string;
 }
 
-function PurchaseRequestsView() {
-  const [requests, setRequests] = useState<PurchaseRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    inventory_id: 0,
-    quantidade: 0,
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [reqRes, invRes] = await Promise.all([
-        fetch('/api/purchase-requests'),
-        fetch('/api/inventory')
-      ]);
-      const reqData = await reqRes.json();
-      const invData = await invRes.json();
-      setRequests(Array.isArray(reqData) ? reqData : []);
-      setInventoryItems(Array.isArray(invData) ? invData : []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const selectedItem = inventoryItems.find(i => i.id === formData.inventory_id);
-      if (!selectedItem) throw new Error('Material not found');
-
-      await fetch('/api/purchase-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inventory_id: selectedItem.id,
-          material_name: selectedItem.material,
-          quantidade: formData.quantidade,
-          status: 'Pendente'
-        })
-      });
-      setIsFormOpen(false);
-      setFormData({ inventory_id: 0, quantidade: 0 });
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const updateStatus = async (id: number, status: string) => {
-    try {
-      await fetch('/api/purchase-requests/' + id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
-      fetchData();
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  return (
-    <div className="flex flex-col h-full glass-panel rounded-lg border-[var(--border)] overflow-hidden relative">
-      <div className="p-4 border-b border-[var(--border)] bg-[#1e1e1e] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
-          <h2 className="text-sm font-bold tracking-wide text-white">SOLICITAÇÕES DE COMPRA</h2>
-        </div>
-        <button 
-          onClick={() => { setFormData({ inventory_id: inventoryItems[0]?.id || 0, quantidade: 0 }); setIsFormOpen(true); }}
-          className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-4 py-2 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center gap-2"
-        >
-          <Plus size={16} /> NOVA SOLICITAÇÃO
-        </button>
-      </div>
-
-      {isFormOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col">
-            <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-              <h3 className="font-bold text-[var(--color-kingstar-cyan)] uppercase tracking-wide text-sm">Nova Solicitação</h3>
-              <button onClick={() => setIsFormOpen(false)} className="text-[#5a6a7a] hover:text-white"><X size={20} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-              <div>
-                <label className="block text-[10px] uppercase text-[#8b9dc3] font-semibold mb-1">Material</label>
-                <select required value={formData.inventory_id} onChange={e => setFormData({...formData, inventory_id: Number(e.target.value)})} className="w-full bg-[#121212] border border-[var(--border)] rounded px-3 py-2 text-sm text-white focus:border-[var(--color-kingstar-cyan)] transition-colors">
-                  <option value={0} disabled>Selecione um material</option>
-                  {inventoryItems.map(item => (
-                    <option key={item.id} value={item.id}>{item.material} (Atual: {item.quantidade})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase text-[#8b9dc3] font-semibold mb-1">Quantidade Solicitada</label>
-                <input type="number" required min="1" value={formData.quantidade} onChange={e => setFormData({...formData, quantidade: Number(e.target.value)})} className="w-full bg-[#121212] border border-[var(--border)] rounded px-3 py-2 text-sm text-white focus:border-[var(--color-kingstar-cyan)] transition-colors font-mono" />
-              </div>
-              <div className="mt-4 flex gap-3 justify-end border-t border-[var(--border)] pt-4">
-                <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-xs font-semibold text-[#8b9dc3] hover:text-white transition-colors" disabled={isSubmitting}>CANCELAR</button>
-                <button type="submit" disabled={isSubmitting || formData.inventory_id === 0} className="px-4 py-2 bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold rounded-sm hover:opacity-90 transition-opacity disabled:opacity-50">
-                  {isSubmitting ? 'ENVIANDO...' : 'SOLICITAR'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead className="sticky top-0 bg-[var(--bg-card)] z-10 shadow-sm">
-            <tr className="text-[#5a6a7a] border-b border-[var(--border)] text-[10px] uppercase tracking-widest font-semibold">
-              <th className="p-4 w-16">ID</th>
-              <th className="p-4">Material</th>
-              <th className="p-4 text-right">Qtd</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Data</th>
-              <th className="p-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border)]">
-            {loading ? (
-              <tr><td colSpan={6} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Carregando dados...</td></tr>
-            ) : requests.length === 0 ? (
-              <tr><td colSpan={6} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Nenhuma solicitação</td></tr>
-            ) : (
-              requests.map(req => (
-                <tr key={req.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="p-4 font-mono text-xs text-[#5a6a7a]">#{req.id.toString().padStart(4, '0')}</td>
-                  <td className="p-4 font-medium text-white">{req.material_name}</td>
-                  <td className="p-4 font-mono text-right text-[var(--color-kingstar-cyan)]">{req.quantidade}</td>
-                  <td className="p-4">
-                    <span className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wide border",
-                      req.status === 'Pendente' ? "text-[var(--color-kingstar-yellow)] border-[var(--color-kingstar-yellow)]/20 bg-[var(--color-kingstar-yellow)]/5" :
-                      req.status === 'Aprovado' ? "text-[var(--color-kingstar-green)] border-[var(--color-kingstar-green)]/20 bg-[var(--color-kingstar-green)]/5" :
-                      "text-[#8b9dc3] border-[#8b9dc3]/20 bg-[#8b9dc3]/5"
-                    )}>
-                      {req.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-[#8b9dc3] font-mono text-xs">
-                    {new Date(req.created_at).toLocaleString()}
-                  </td>
-                  <td className="p-4 text-right">
-                    {req.status === 'Pendente' && (
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => updateStatus(req.id, 'Aprovado')} className="text-[var(--color-kingstar-green)] hover:text-white px-2 py-1 text-xs border border-[var(--color-kingstar-green)]/30 rounded hover:bg-[var(--color-kingstar-green)] transition-colors">Aprovar</button>
-                        <button onClick={() => updateStatus(req.id, 'Rejeitado')} className="text-[#8b9dc3] hover:text-[var(--color-kingstar-red)] px-2 py-1 text-xs border border-[var(--border)] rounded hover:border-[var(--color-kingstar-red)]/50 transition-colors">Rejeitar</button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
