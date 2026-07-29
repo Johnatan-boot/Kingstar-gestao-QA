@@ -103,8 +103,8 @@ export default function App() {
       {/* Sidebar */}
       <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-[var(--border)]">
-          <div className="w-8 h-8 bg-[var(--color-kingstar-cyan)] rounded flex items-center justify-center">
-            <span className="text-black font-bold">K</span>
+          <div className="w-12 h-12 bg-[var(--color-kingstar-cyan)] rounded flex items-center justify-center">
+           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR0PiHdkfbRFE803EY7Ku91d53ElHeMyAysv4RtOMOtTxD6pYVKieaBWE&s=10" />
           </div>
           <span className="font-bold tracking-tight text-lg">KINGSTAR <span className="text-[var(--color-kingstar-cyan)]">QA</span></span>
         </div>
