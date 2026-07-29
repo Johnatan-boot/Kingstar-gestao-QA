@@ -73,9 +73,11 @@ export function PurchaseRequestsView({ onRefreshParent }: { onRefreshParent: () 
         })
       });
       setIsFormOpen(false);
+      import('react-hot-toast').then(m => m.default.success('Solicitação criada com sucesso!'));
       setFormData({ inventory_id: 0, quantidade: 0 });
       fetchData();
       onRefreshParent();
+      import('react-hot-toast').then(m => m.default.success('Status atualizado!'));
     } catch (e) {
       console.error(e);
     } finally {
@@ -106,6 +108,7 @@ export function PurchaseRequestsView({ onRefreshParent }: { onRefreshParent: () 
       nf: receiveData.nf
     });
     setReceiveModalOpen(false);
+    import('react-hot-toast').then(m => m.default.success('Material recebido no estoque com sucesso!'));
     setIsSubmitting(false);
   };
 

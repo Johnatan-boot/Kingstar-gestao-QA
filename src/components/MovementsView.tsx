@@ -24,6 +24,7 @@ export function MovementsView({ movements, items, onRefresh }: { movements: Move
         body: JSON.stringify(formData)
       });
       setIsFormOpen(false);
+      import('react-hot-toast').then(m => m.default.success('Movimentação registrada com sucesso!'));
       setFormData({ inventory_id: 0, tipo: 'ENTRADA', quantidade: 0, status: 'Concluído' });
       onRefresh();
     } catch (e) {

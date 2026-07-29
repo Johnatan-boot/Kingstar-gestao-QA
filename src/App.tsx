@@ -10,6 +10,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
 import { ReportsView } from './components/ReportsView';
 import { MovementsView } from './components/MovementsView';
 import { PurchaseRequestsView } from './components/PurchaseRequestsView';
+import { Toaster, toast } from 'react-hot-toast';
 
 // Types
 export type InventoryItem = {
@@ -45,6 +46,7 @@ type Stats = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [isNavigating, setIsNavigating] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -81,8 +83,23 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleTabChange = (tab: string) => {
+    if (tab === activeTab) return;
+    setIsNavigating(true);
+    setActiveTab(tab);
+    setTimeout(() => setIsNavigating(false), 800);
+  };
+
   return (
     <div className="flex h-screen w-full bg-[var(--bg-app)] text-[#e5e5e5] font-sans overflow-hidden">
+      <Toaster 
+        position="top-right" 
+        toastOptions={{ 
+          style: { background: '#1e1e1e', color: '#fff', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '14px' },
+          success: { iconTheme: { primary: '#22c55e', secondary: '#1e1e1e' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#1e1e1e' } }
+        }} 
+      />
       {/* Sidebar */}
       <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-[var(--border)]">
@@ -95,7 +112,7 @@ export default function App() {
           {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabChange(tab)}
               className={cn(
                 "w-full text-left px-4 py-2 rounded text-sm font-medium transition-colors",
                 activeTab === tab 
@@ -139,24 +156,42 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-8">
-          {activeTab === 'Dashboard' && <Dashboard stats={stats} movements={movements} lastSync={lastSync} onRefresh={fetchData} />}
-          {activeTab === 'Estoque Geral' && <InventoryView onRefresh={fetchData} />}
-          {activeTab === 'Movimentações' && <MovementsView movements={movements} items={items} onRefresh={fetchData} />}
-          {activeTab === 'Solicitações de Compra' && <PurchaseRequestsView onRefreshParent={fetchData} />}
-          {activeTab === 'Relatórios' && <ReportsView items={items} movements={movements} />}
-          {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] glass-panel rounded-lg border border-[var(--border)] border-dashed p-8 text-center bg-[#1a1a1a]/50">
-              <div className="w-16 h-16 rounded-full bg-[var(--color-kingstar-cyan)]/10 flex items-center justify-center mb-4">
-                <Box size={32} className="text-[var(--color-kingstar-cyan)] opacity-70" />
+        <div className="flex-1 overflow-auto p-8 relative">
+          {isNavigating ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-app)] z-10 animate-fade-in">
+              <div className="relative w-20 h-20 flex items-center justify-center mb-6">
+                <div className="absolute inset-0 border-t-2 border-r-2 border-transparent border-l-[var(--color-kingstar-cyan)] border-b-[var(--color-kingstar-cyan)] rounded-full animate-spin"></div>
+                <div className="absolute inset-2 border-t-2 border-l-2 border-transparent border-r-[var(--color-kingstar-green)] border-b-[var(--color-kingstar-green)] rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                <Box size={24} className="text-[var(--color-kingstar-cyan)] animate-pulse" />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">{activeTab}</h2>
-              <p className="text-[#8b9dc3] max-w-md">
-                Este módulo está em desenvolvimento. A funcionalidade para {activeTab.toLowerCase()} estará disponível em breve.
-              </p>
-              <div className="mt-6 px-4 py-1.5 bg-[#121212] border border-[var(--border)] rounded-full text-[10px] uppercase font-mono text-[#5a6a7a]">
-                STATUS: EM CONSTRUÇÃO
+              <div className="text-[var(--color-kingstar-cyan)] font-mono text-sm tracking-widest animate-pulse font-bold">
+                CARREGANDO MÓDULO...
               </div>
+              <div className="text-[#5a6a7a] text-[10px] font-mono mt-2 uppercase">
+                {activeTab}
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col animate-fade-in">
+              {activeTab === 'Dashboard' && <Dashboard stats={stats} movements={movements} lastSync={lastSync} onRefresh={fetchData} />}
+              {activeTab === 'Estoque Geral' && <InventoryView onRefresh={fetchData} />}
+              {activeTab === 'Movimentações' && <MovementsView movements={movements} items={items} onRefresh={fetchData} />}
+              {activeTab === 'Solicitações de Compra' && <PurchaseRequestsView onRefreshParent={fetchData} />}
+              {activeTab === 'Relatórios' && <ReportsView items={items} movements={movements} />}
+              {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && (
+                <div className="flex flex-col items-center justify-center h-full min-h-[400px] glass-panel rounded-lg border border-[var(--border)] border-dashed p-8 text-center bg-[#1a1a1a]/50">
+                  <div className="w-16 h-16 rounded-full bg-[var(--color-kingstar-cyan)]/10 flex items-center justify-center mb-4">
+                    <Box size={32} className="text-[var(--color-kingstar-cyan)] opacity-70" />
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-2">{activeTab}</h2>
+                  <p className="text-[#8b9dc3] max-w-md">
+                    Este módulo está em desenvolvimento. A funcionalidade para {activeTab.toLowerCase()} estará disponível em breve.
+                  </p>
+                  <div className="mt-6 px-4 py-1.5 bg-[#121212] border border-[var(--border)] rounded-full text-[10px] uppercase font-mono text-[#5a6a7a]">
+                    STATUS: EM CONSTRUÇÃO
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -392,6 +427,7 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
         });
       }
       setIsFormOpen(false);
+      import('react-hot-toast').then(m => m.default.success(editingId ? 'Material atualizado com sucesso!' : 'Material cadastrado com sucesso!'));
       setEditingId(null);
       setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, quantidade_minima: 10, quantidade_maxima: 100, status: 'Ativo' });
       await fetchInventory();
@@ -424,6 +460,7 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
     try {
       await fetch('/api/inventory/' + deletingId, { method: 'DELETE' });
       setDeletingId(null);
+      import('react-hot-toast').then(m => m.default.success('Material excluído com sucesso.'));
       await fetchInventory();
       onRefresh();
     } catch (e) {
