@@ -17,7 +17,9 @@ export let isMySQL = false;
 
 function getDB() {
   if (pool || sqliteDb) return;
-  const dbUrl = process.env.DATABASE_URL;
+  const dbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQL_ADDON_URI || process.env.DB_URL;
+  const mysqlHost = process.env.MYSQL_HOST || process.env.MYSQL_ADDON_HOST || process.env.DB_HOST;
+
   if (dbUrl) {
     pool = mysql.createPool({
       uri: dbUrl,
@@ -26,12 +28,25 @@ function getDB() {
       queueLimit: 0
     });
     isMySQL = true;
-    console.log('Connected to MySQL database via Clever Cloud.');
+    console.log('Connected to MySQL database via Connection URL.');
+  } else if (mysqlHost) {
+    pool = mysql.createPool({
+      host: mysqlHost,
+      user: process.env.MYSQL_USER || process.env.MYSQL_ADDON_USER || process.env.DB_USER || 'root',
+      password: process.env.MYSQL_PASSWORD || process.env.MYSQL_ADDON_PASSWORD || process.env.DB_PASSWORD || '',
+      database: process.env.MYSQL_DATABASE || process.env.MYSQL_ADDON_DB || process.env.DB_NAME || 'kingstar',
+      port: Number(process.env.MYSQL_PORT || process.env.MYSQL_ADDON_PORT || process.env.DB_PORT || 3306),
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    });
+    isMySQL = true;
+    console.log('Connected to MySQL database via host/user environment variables.');
   } else {
     const dbPath = path.join(dbDir, 'kingstar.sqlite');
     sqliteDb = new DatabaseSync(dbPath);
     isMySQL = false;
-    console.log('DATABASE_URL not set. Falling back to local SQLite.');
+    console.log('MySQL environment variables not set. Falling back to local SQLite.');
   }
 }
 
@@ -148,7 +163,25 @@ export async function initDB() {
           FOREIGN KEY (inventory_id) REFERENCES inventory(id) ON DELETE CASCADE
         )
       `);
-      console.log('MySQL schema initialized.');
+
+      // Auto-migrate missing columns in existing MySQL tables
+      const addColumnMySQL = async (table: string, col: string, definition: string) => {
+        try {
+          await pool!.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${definition}`);
+          console.log(`Added missing column ${col} to MySQL table ${table}`);
+        } catch (e: any) {
+          // Ignore duplicate column errors (code 1060 / ER_DUP_FIELDNAME)
+        }
+      };
+      await addColumnMySQL('inventory', 'fornecedor', 'VARCHAR(255)');
+      await addColumnMySQL('inventory', 'medida', 'VARCHAR(255)');
+      await addColumnMySQL('inventory', 'quantidade_minima', 'INT DEFAULT 10');
+      await addColumnMySQL('inventory', 'quantidade_maxima', 'INT DEFAULT 100');
+      await addColumnMySQL('inventory', 'status', "VARCHAR(255) DEFAULT 'Ativo'");
+      await addColumnMySQL('movements', 'solicitacao', 'VARCHAR(255)');
+      await addColumnMySQL('movements', 'status', 'VARCHAR(255)');
+
+      console.log('MySQL schema initialized and validated.');
     } else if (sqliteDb) {
       sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS inventory (
@@ -215,7 +248,23 @@ export async function initDB() {
           FOREIGN KEY (inventory_id) REFERENCES inventory(id) ON DELETE CASCADE
         )
       `);
-      console.log('SQLite schema initialized.');
+
+      const addColumnSQLite = (table: string, col: string, definition: string) => {
+        try {
+          sqliteDb!.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${definition}`);
+        } catch (e: any) {
+          // Ignore duplicate column name errors
+        }
+      };
+      addColumnSQLite('inventory', 'fornecedor', 'TEXT');
+      addColumnSQLite('inventory', 'medida', 'TEXT');
+      addColumnSQLite('inventory', 'quantidade_minima', 'INTEGER DEFAULT 10');
+      addColumnSQLite('inventory', 'quantidade_maxima', 'INTEGER DEFAULT 100');
+      addColumnSQLite('inventory', 'status', "TEXT DEFAULT 'Ativo'");
+      addColumnSQLite('movements', 'solicitacao', 'TEXT');
+      addColumnSQLite('movements', 'status', 'TEXT');
+
+      console.log('SQLite schema initialized and validated.');
     }
   } catch (err) {
     console.error('Failed to initialize schema:', err);
