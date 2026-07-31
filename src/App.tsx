@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Box, Search, RefreshCw, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Activity, Box, Search, RefreshCw, Plus, Edit2, Trash2, Check, X, Menu, LayoutDashboard, Boxes, ArrowLeftRight, ShoppingCart, ShieldCheck, BarChart3, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -10,6 +10,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
 import { ReportsView } from './components/ReportsView';
 import { MovementsView } from './components/MovementsView';
 import { PurchaseRequestsView } from './components/PurchaseRequestsView';
+import { QAView } from './components/QAView';
 import { Toaster, toast } from 'react-hot-toast';
 
 // Types
@@ -104,11 +105,11 @@ export default function App() {
       <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-[var(--border)]">
           <div className="w-12 h-12 bg-[var(--color-kingstar-cyan)] rounded flex items-center justify-center">
-           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR0PiHdkfbRFE803EY7Ku91d53ElHeMyAysv4RtOMOtTxD6pYVKieaBWE&s=10" />
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR0PiHdkfbRFE803EY7Ku91d53ElHeMyAysv4RtOMOtTxD6pYVKieaBWE&s=10" className="w-full h-full object-cover rounded" alt="Logo" />
           </div>
           <span className="font-bold tracking-tight text-lg">KINGSTAR <span className="text-[var(--color-kingstar-cyan)]">QA</span></span>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
           {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios'].map((tab) => (
             <button
               key={tab}
@@ -156,7 +157,7 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-8 relative">
+        <div className="flex-1 overflow-auto p-4 lg:p-8 relative">
           {isNavigating ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-app)] z-10 animate-fade-in">
               <div className="relative w-20 h-20 flex items-center justify-center mb-6">
@@ -177,8 +178,9 @@ export default function App() {
               {activeTab === 'Estoque Geral' && <InventoryView onRefresh={fetchData} />}
               {activeTab === 'Movimentações' && <MovementsView movements={movements} items={items} onRefresh={fetchData} />}
               {activeTab === 'Solicitações de Compra' && <PurchaseRequestsView onRefreshParent={fetchData} />}
+              {activeTab === 'Qualidade (QA)' && <QAView items={items} onRefresh={fetchData} />}
               {activeTab === 'Relatórios' && <ReportsView items={items} movements={movements} />}
-              {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && (
+              {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Qualidade (QA)' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] glass-panel rounded-lg border border-[var(--border)] border-dashed p-8 text-center bg-[#1a1a1a]/50">
                   <div className="w-16 h-16 rounded-full bg-[var(--color-kingstar-cyan)]/10 flex items-center justify-center mb-4">
                     <Box size={32} className="text-[var(--color-kingstar-cyan)] opacity-70" />
@@ -497,8 +499,8 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
 
       {/* Form Overlay */}
       {isFormOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-kingstar-cyan)] uppercase tracking-wide text-sm">
                 {editingId ? 'Editar Item' : 'Novo Material'}
@@ -551,8 +553,8 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
 
       {/* Delete Confirmation Overlay */}
       {deletingId !== null && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-red)]/30 rounded-lg w-full max-w-sm shadow-2xl flex flex-col p-6 text-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-red)]/30 rounded-lg w-full max-w-sm shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-[var(--color-kingstar-red)]/10 flex items-center justify-center mx-auto mb-4">
               <Trash2 size={32} className="text-[var(--color-kingstar-red)] opacity-90" />
             </div>

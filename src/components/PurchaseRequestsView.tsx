@@ -136,8 +136,8 @@ export function PurchaseRequestsView({ onRefreshParent }: { onRefreshParent: () 
       </div>
 
       {isFormOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-kingstar-cyan)] uppercase tracking-wide text-sm">Nova Solicitação</h3>
               <button onClick={() => setIsFormOpen(false)} className="text-[#5a6a7a] hover:text-white"><X size={20} /></button>
@@ -168,8 +168,8 @@ export function PurchaseRequestsView({ onRefreshParent }: { onRefreshParent: () 
       )}
 
       {receiveModalOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-green)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-green)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-kingstar-green)] uppercase tracking-wide text-sm">Receber Material</h3>
               <button onClick={() => setReceiveModalOpen(false)} className="text-[#5a6a7a] hover:text-white"><X size={20} /></button>

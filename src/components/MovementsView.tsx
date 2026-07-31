@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { InventoryItem, Movement } from '../App';
-import { RefreshCw, Search, Plus, ArrowUpRight, ArrowDownRight, Package } from 'lucide-react';
+import { RefreshCw, Search, Plus, ArrowUpRight, ArrowDownRight, Package, X } from 'lucide-react';
 import { cn } from '../App';
 
 export function MovementsView({ movements, items, onRefresh }: { movements: Movement[], items: InventoryItem[], onRefresh: () => void }) {
@@ -49,11 +49,11 @@ export function MovementsView({ movements, items, onRefresh }: { movements: Move
       </div>
 
       {isFormOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-[#1e1e1e] border border-[var(--color-kingstar-cyan)]/30 rounded-lg w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-kingstar-cyan)] uppercase tracking-wide text-sm">Nova Movimentação</h3>
-              <button onClick={() => setIsFormOpen(false)} className="text-[#5a6a7a] hover:text-white"><RefreshCw size={16} className="rotate-45" /></button>
+              <button onClick={() => setIsFormOpen(false)} className="text-[#5a6a7a] hover:text-white"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
               <div>
@@ -93,36 +93,53 @@ export function MovementsView({ movements, items, onRefresh }: { movements: Move
         </div>
       )}
 
-      <div className="flex-1 overflow-auto p-4">
-        <div className="space-y-2">
-          {movements.length === 0 ? (
-            <div className="text-center p-8 text-[#5a6a7a] font-mono text-sm">Nenhuma movimentação registrada</div>
-          ) : (
-            movements.map(mov => (
-              <div key={mov.id} className="bg-[#1a1a1a] border border-[var(--border)] rounded flex items-center p-3 hover:border-[#8b9dc3]/30 transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 rounded bg-[#121212] flex items-center justify-center border border-[var(--border)]">
-                  {mov.tipo === 'ENTRADA' ? (
-                    <ArrowUpRight size={18} className="text-[var(--color-kingstar-green)]" />
-                  ) : (
-                    <ArrowDownRight size={18} className="text-[var(--color-kingstar-yellow)]" />
-                  )}
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-white">{mov.material_name}</span>
-                    <span className={`font-mono font-bold text-sm ${mov.tipo === 'ENTRADA' ? 'text-[var(--color-kingstar-green)]' : 'text-[var(--color-kingstar-yellow)]'}`}>
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-left text-sm whitespace-nowrap">
+          <thead className="sticky top-0 bg-[var(--bg-card)] z-10 shadow-sm">
+            <tr className="text-[#5a6a7a] border-b border-[var(--border)] text-[10px] uppercase tracking-widest font-semibold">
+              <th className="p-4 w-16">ID</th>
+              <th className="p-4">Tipo</th>
+              <th className="p-4">Material</th>
+              <th className="p-4">Fornecedor</th>
+              <th className="p-4 text-right">Qtd</th>
+              <th className="p-4">Status/Obs</th>
+              <th className="p-4 text-right">Data e Hora</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[var(--border)]">
+            {movements.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-8 text-center text-[#5a6a7a] font-mono text-sm">Nenhuma movimentação registrada</td>
+              </tr>
+            ) : (
+              movements.map(mov => (
+                <tr key={mov.id} className="hover:bg-white/5 transition-colors group">
+                  <td className="p-4 font-mono text-xs text-[#5a6a7a]">#{mov.id.toString().padStart(4, '0')}</td>
+                  <td className="p-4">
+                    <span className={cn(
+                      "text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wide border flex items-center w-max gap-1",
+                      mov.tipo === 'ENTRADA' ? "text-[var(--color-kingstar-green)] border-[var(--color-kingstar-green)]/20 bg-[var(--color-kingstar-green)]/5" : "text-[var(--color-kingstar-yellow)] border-[var(--color-kingstar-yellow)]/20 bg-[var(--color-kingstar-yellow)]/5"
+                    )}>
+                      {mov.tipo === 'ENTRADA' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                      {mov.tipo}
+                    </span>
+                  </td>
+                  <td className="p-4 font-medium text-white">{mov.material_name}</td>
+                  <td className="p-4 text-[#8b9dc3]">{mov.material_fornecedor || '-'}</td>
+                  <td className="p-4 font-mono text-right font-bold text-white">
+                    <span className={mov.tipo === 'ENTRADA' ? 'text-[var(--color-kingstar-green)]' : 'text-[var(--color-kingstar-yellow)]'}>
                       {mov.tipo === 'ENTRADA' ? '+' : '-'}{mov.quantidade}
                     </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-[#8b9dc3] font-mono uppercase">
-                    <span className="flex items-center gap-1.5"><Package size={12} /> {mov.material_fornecedor || 'Desconhecido'}</span>
-                    <span>{new Date(mov.created_at).toLocaleString()} • {mov.status}</span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                  </td>
+                  <td className="p-4 text-[#8b9dc3] text-xs max-w-[200px] truncate">{mov.status || '-'}</td>
+                  <td className="p-4 font-mono text-xs text-[#5a6a7a] text-right">
+                    {new Date(mov.created_at).toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
