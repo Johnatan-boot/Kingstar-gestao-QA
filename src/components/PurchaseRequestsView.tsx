@@ -123,13 +123,13 @@ export function PurchaseRequestsView({ onRefreshParent }: { onRefreshParent: () 
 
   return (
     <div className="flex flex-col h-full glass-panel rounded-lg border-[var(--border)] overflow-hidden relative">
-      <div className="p-4 border-b border-[var(--border)] bg-[#1e1e1e] flex items-center justify-between shrink-0">
+      <div className="p-4 border-b border-[var(--border)] bg-[#1e1e1e] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-bold tracking-wide text-white">SOLICITAÇÕES DE COMPRA</h2>
         </div>
         <button 
           onClick={() => { setFormData({ inventory_id: inventoryItems[0]?.id || 0, quantidade: 0 }); setIsFormOpen(true); }}
-          className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-4 py-2 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center gap-2"
+          className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-4 py-2 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center justify-center gap-2 shrink-0"
         >
           <Plus size={16} /> NOVA SOLICITAÇÃO
         </button>

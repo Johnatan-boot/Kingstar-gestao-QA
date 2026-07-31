@@ -9,7 +9,7 @@ export function ReportsView({ items, movements }: { items: InventoryItem[], move
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <div className="glass-panel p-4 rounded-lg flex flex-col justify-between h-28 border-[var(--color-kingstar-red)]/30 relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 w-16 h-16 bg-[var(--color-kingstar-red)]/5 rounded-full blur-xl group-hover:bg-[var(--color-kingstar-red)]/10 transition-colors"></div>
           <div className="flex justify-between items-start z-10">
@@ -56,7 +56,7 @@ export function ReportsView({ items, movements }: { items: InventoryItem[], move
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 flex-1 min-h-[400px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[400px]">
         <div className="glass-panel rounded-lg p-6 border-[var(--border)] flex flex-col">
           <h3 className="text-sm font-bold text-[var(--color-kingstar-red)] tracking-wide mb-4 flex items-center gap-2">
             <AlertTriangle size={16} /> GARGALOS E AÇÃO REQUERIDA

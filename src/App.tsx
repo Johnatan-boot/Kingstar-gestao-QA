@@ -77,6 +77,8 @@ export default function App() {
     }
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   useEffect(() => {
     fetchData();
     // Poll every 30 seconds
@@ -85,6 +87,7 @@ export default function App() {
   }, []);
 
   const handleTabChange = (tab: string) => {
+    setMobileMenuOpen(false);
     if (tab === activeTab) return;
     setIsNavigating(true);
     setActiveTab(tab);
@@ -101,8 +104,8 @@ export default function App() {
           error: { iconTheme: { primary: '#ef4444', secondary: '#1e1e1e' } }
         }} 
       />
-      {/* Sidebar */}
-      <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col shrink-0">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex-col shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-[var(--border)]">
           <div className="w-12 h-12 bg-[var(--color-kingstar-cyan)] rounded flex items-center justify-center">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR0PiHdkfbRFE803EY7Ku91d53ElHeMyAysv4RtOMOtTxD6pYVKieaBWE&s=10" className="w-full h-full object-cover rounded" alt="Logo" />
@@ -136,13 +139,68 @@ export default function App() {
         </div>
       </aside>
 
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div 
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-64 max-w-[85vw] bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col z-10 h-full shadow-2xl animate-fade-in">
+            <div className="p-6 flex items-center justify-between border-b border-[var(--border)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[var(--color-kingstar-cyan)] rounded flex items-center justify-center">
+                  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRR0PiHdkfbRFE803EY7Ku91d53ElHeMyAysv4RtOMOtTxD6pYVKieaBWE&s=10" className="w-full h-full object-cover rounded" alt="Logo" />
+                </div>
+                <span className="font-bold tracking-tight text-lg">KINGSTAR <span className="text-[var(--color-kingstar-cyan)]">QA</span></span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-[#8b9dc3] hover:text-white p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+              {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 rounded text-sm font-medium transition-colors flex items-center justify-between",
+                    activeTab === tab 
+                      ? "bg-[var(--bg-card)] border border-[var(--color-kingstar-cyan)] text-[var(--color-kingstar-cyan)]"
+                      : "hover:bg-[var(--bg-card)] text-[#8b9dc3]"
+                  )}
+                >
+                  <span>{tab}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="p-4 border-t border-[var(--border)]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-[var(--border)]"></div>
+                <div className="text-xs">
+                  <p className="font-medium text-white">Admin User</p>
+                  <p className="text-[#5a6a7a]">Supervisor QA</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 flex flex-col bg-[#0f0f0f] min-w-0">
         {/* Header */}
-        <header className="h-16 shrink-0 border-b border-[var(--border)] flex items-center justify-between px-8 bg-[#121212]">
+        <header className="h-16 shrink-0 border-b border-[var(--border)] flex items-center justify-between px-3 sm:px-6 lg:px-8 bg-[#121212] gap-2">
           <div className="flex items-center gap-2 text-sm text-[#8b9dc3]">
-            <span>Gestão</span>
-            <span className="text-[#5a6a7a]">/</span>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-1.5 -ml-1 text-[#8b9dc3] hover:text-white rounded transition-colors mr-1"
+              title="Abrir Menu"
+            >
+              <Menu size={20} />
+            </button>
+            <span className="hidden sm:inline">Gestão</span>
+            <span className="hidden sm:inline text-[#5a6a7a]">/</span>
             <span className="text-white font-medium">{activeTab}</span>
           </div>
           <div className="flex items-center gap-3">
@@ -218,7 +276,7 @@ export default function App() {
         </div>
         
         {/* Status Bar */}
-        <footer className="h-8 shrink-0 border-t border-[var(--border)] bg-[var(--bg-sidebar)] flex items-center px-6 justify-between text-[10px] text-[#5a6a7a] font-mono">
+        <footer className="h-8 shrink-0 border-t border-[var(--border)] bg-[var(--bg-sidebar)] flex items-center px-4 sm:px-6 justify-between text-[10px] text-[#5a6a7a] font-mono overflow-x-auto whitespace-nowrap gap-4">
           <div className="flex items-center gap-4">
             <span>ENV: PRODUCTION</span>
             <span>NODE: v20.10.0 (FASTIFY/EXPRESS)</span>
@@ -226,7 +284,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-kingstar-green)] animate-pulse"></span>
-            REAL-TIME UPDATES ENABLED
+            REAL-TIME UPDATES
           </div>
         </footer>
       </main>
@@ -242,7 +300,7 @@ function Dashboard({ stats, movements, lastSync, onRefresh }: { stats: Stats | n
   return (
     <div className="flex flex-col h-full gap-6">
       {/* Top Stats Grid */}
-      <div className="grid grid-cols-4 gap-6 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 shrink-0">
         <div className="glass-panel p-4 rounded-lg flex flex-col justify-between h-28 border-[var(--border)] relative overflow-hidden group hover:border-[var(--color-kingstar-cyan)]/50 transition-colors">
           <div className="absolute -right-4 -top-4 w-16 h-16 bg-[var(--color-kingstar-cyan)]/5 rounded-full blur-xl group-hover:bg-[var(--color-kingstar-cyan)]/10 transition-colors"></div>
           <span className="text-xs text-[#8b9dc3] uppercase tracking-wider font-semibold z-10">Itens em Estoque</span>
@@ -277,9 +335,9 @@ function Dashboard({ stats, movements, lastSync, onRefresh }: { stats: Stats | n
       </div>
 
       {/* Main Content Grid */}
-      <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
         {/* Main Visuals - Chart */}
-        <div className="col-span-7 glass-panel rounded-lg p-6 flex flex-col border-[var(--border)]">
+        <div className="lg:col-span-7 glass-panel rounded-lg p-4 sm:p-6 flex flex-col border-[var(--border)]">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-bold text-white tracking-wide">GESTÃO DE MATERIAIS SOLICITADOS</h3>
             <div className="flex gap-4 text-[10px] text-[#8b9dc3] font-semibold uppercase">
@@ -319,7 +377,7 @@ function Dashboard({ stats, movements, lastSync, onRefresh }: { stats: Stats | n
         </div>
 
         {/* Side Table (Recent Movements) */}
-        <div className="col-span-5 glass-panel rounded-lg flex flex-col border-[var(--border)] overflow-hidden">
+        <div className="lg:col-span-5 glass-panel rounded-lg flex flex-col border-[var(--border)] overflow-hidden">
           <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[#1e1e1e]">
             <h3 className="text-xs font-bold uppercase tracking-widest text-white">Últimas Movimentações</h3>
             <button className="bg-[var(--color-kingstar-cyan)] text-black text-[10px] font-bold px-3 py-1.5 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors shadow-[0_0_10px_rgba(56,189,248,0.2)]">
@@ -502,21 +560,21 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="flex flex-col h-full glass-panel rounded-lg border-[var(--border)] overflow-hidden relative">
       {/* Toolbar */}
-      <div className="p-4 border-b border-[var(--border)] bg-[#1e1e1e] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="p-4 border-b border-[var(--border)] bg-[#1e1e1e] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <h2 className="text-sm font-bold tracking-wide text-white">CONTROLE DE ESTOQUE</h2>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5a6a7a]" />
             <input 
               type="text" 
               placeholder="Buscar material..." 
-              className="bg-[#121212] border border-[var(--border)] rounded text-xs px-3 py-1.5 pl-8 text-white w-64 focus:border-[var(--color-kingstar-cyan)] transition-colors placeholder:text-[#5a6a7a]"
+              className="bg-[#121212] border border-[var(--border)] rounded text-xs px-3 py-1.5 pl-8 text-white w-full sm:w-64 focus:border-[var(--color-kingstar-cyan)] transition-colors placeholder:text-[#5a6a7a]"
             />
           </div>
         </div>
         <button 
           onClick={() => { setEditingId(null); setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, quantidade_minima: 10, quantidade_maxima: 100, status: 'Ativo' }); setIsFormOpen(true); }}
-          className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-4 py-2 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center gap-2 shadow-[0_0_10px_rgba(56,189,248,0.2)]"
+          className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-4 py-2 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(56,189,248,0.2)] shrink-0"
         >
           <Plus size={16} /> NOVO ITEM
         </button>

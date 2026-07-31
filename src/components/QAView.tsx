@@ -409,16 +409,16 @@ export function QAView({ items, onRefresh }: { items: InventoryItem[], onRefresh
         </div>
         
         {/* BOTÕES DE AÇÃO RÁPIDA */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
           <button 
             onClick={() => setIsInspectionFormOpen(true)}
-            className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-3 py-1.5 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center gap-1.5 shadow-[0_0_10px_rgba(56,189,248,0.2)]"
+            className="bg-[var(--color-kingstar-cyan)] text-black text-xs font-bold px-3 py-1.5 rounded-sm hover:bg-[var(--color-kingstar-cyan)]/90 transition-colors flex items-center justify-center gap-1.5 shadow-[0_0_10px_rgba(56,189,248,0.2)] flex-1 sm:flex-none"
           >
             <Plus size={15} /> NOVA INSPEÇÃO
           </button>
           <button 
             onClick={() => setIsRNCFormOpen(true)}
-            className="bg-[var(--color-kingstar-red)] text-white text-xs font-bold px-3 py-1.5 rounded-sm hover:bg-[var(--color-kingstar-red)]/90 transition-colors flex items-center gap-1.5"
+            className="bg-[var(--color-kingstar-red)] text-white text-xs font-bold px-3 py-1.5 rounded-sm hover:bg-[var(--color-kingstar-red)]/90 transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-none"
           >
             <AlertTriangle size={15} /> ABRIR RNC
           </button>
