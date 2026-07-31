@@ -204,25 +204,6 @@ export default function App() {
             <span className="text-white font-medium">{activeTab}</span>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={async () => {
-                if (confirm('Atenção: Deseja realmente ZERAR TODOS os materiais e registros do banco de dados (MySQL / SQLite)?')) {
-                  try {
-                    const res = await fetch('/api/database/reset', { method: 'POST' });
-                    if (!res.ok) throw new Error('Erro ao zerar o banco no servidor');
-                    import('react-hot-toast').then(m => m.default.success('Banco de dados zerado com sucesso!'));
-                    fetchData();
-                  } catch (e: any) {
-                    import('react-hot-toast').then(m => m.default.error(e.message || 'Erro ao zerar banco de dados'));
-                  }
-                }
-              }}
-              className="px-2.5 py-1 bg-red-600/15 border border-red-500/30 text-red-400 hover:bg-red-600/30 text-[11px] font-bold rounded flex items-center gap-1 transition-colors"
-              title="Zerar Banco de Dados (MySQL / SQLite)"
-            >
-              <Trash2 size={13} />
-              Zerar Banco
-            </button>
             <div className="px-3 py-1 bg-[var(--color-kingstar-green)]/10 border border-[var(--color-kingstar-green)]/30 text-[var(--color-kingstar-green)] text-[10px] uppercase font-bold rounded-full flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-kingstar-green)] animate-pulse"></span>
               Sistema Online
