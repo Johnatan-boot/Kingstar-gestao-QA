@@ -27,13 +27,22 @@ async function createServer() {
   app.post('/api/inventory', async (req, res) => {
     const { fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status } = req.body;
     try {
-      await dbRun(
+      const result = await dbRun(
         'INSERT INTO inventory (fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [fornecedor, material, medida, quantidade || 0, quantidade_minima || 10, quantidade_maxima || 100, status || 'Ativo']
+        [
+          fornecedor ?? '',
+          material ?? '',
+          medida ?? '',
+          Number(quantidade) || 0,
+          Number(quantidade_minima) || 10,
+          Number(quantidade_maxima) || 100,
+          status || 'Ativo'
+        ]
       );
-      res.status(201).json({ message: 'Item created' });
+      res.status(201).json({ message: 'Item created', id: result.insertId });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create item' });
+      console.error('Error creating inventory item:', error);
+      res.status(500).json({ error: 'Failed to create item', details: String(error) });
     }
   });
 
@@ -43,11 +52,21 @@ async function createServer() {
     try {
       await dbRun(
         'UPDATE inventory SET fornecedor = ?, material = ?, medida = ?, quantidade = ?, quantidade_minima = ?, quantidade_maxima = ?, status = ? WHERE id = ?',
-        [fornecedor, material, medida, quantidade, quantidade_minima, quantidade_maxima, status, id]
+        [
+          fornecedor ?? '',
+          material ?? '',
+          medida ?? '',
+          Number(quantidade) || 0,
+          Number(quantidade_minima) || 10,
+          Number(quantidade_maxima) || 100,
+          status || 'Ativo',
+          id
+        ]
       );
       res.json({ message: 'Item updated' });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to update item' });
+      console.error('Error updating inventory item:', error);
+      res.status(500).json({ error: 'Failed to update item', details: String(error) });
     }
   });
 

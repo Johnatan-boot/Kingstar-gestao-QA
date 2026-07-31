@@ -35,15 +35,20 @@ function getDB() {
   }
 }
 
+function cleanArgs(args: any[]): any[] {
+  return (args || []).map(arg => (arg === undefined ? null : arg));
+}
+
 export async function dbRun(sql: string, args: any[] = []) {
   getDB();
+  const sanitizedArgs = cleanArgs(args);
   if (pool) {
     // Replace SQLite ? with MySQL ? (which are the same for simple queries)
-    const [result]: any = await pool.execute(sql, args);
+    const [result]: any = await pool.execute(sql, sanitizedArgs);
     return { insertId: result.insertId, affectedRows: result.affectedRows };
   } else if (sqliteDb) {
     const stmt = sqliteDb.prepare(sql);
-    const result = stmt.run(...args);
+    const result = stmt.run(...sanitizedArgs);
     return { insertId: Number(result.lastInsertRowid), affectedRows: result.changes };
   }
   return { insertId: 0, affectedRows: 0 };
@@ -51,23 +56,25 @@ export async function dbRun(sql: string, args: any[] = []) {
 
 export async function dbGet(sql: string, args: any[] = []) {
   getDB();
+  const sanitizedArgs = cleanArgs(args);
   if (pool) {
-    const [rows]: any = await pool.execute(sql, args);
+    const [rows]: any = await pool.execute(sql, sanitizedArgs);
     return rows[0] || undefined;
   } else if (sqliteDb) {
     const stmt = sqliteDb.prepare(sql);
-    return stmt.get(...args);
+    return stmt.get(...sanitizedArgs);
   }
 }
 
 export async function dbAll(sql: string, args: any[] = []) {
   getDB();
+  const sanitizedArgs = cleanArgs(args);
   if (pool) {
-    const [rows]: any = await pool.execute(sql, args);
+    const [rows]: any = await pool.execute(sql, sanitizedArgs);
     return rows as any[];
   } else if (sqliteDb) {
     const stmt = sqliteDb.prepare(sql);
-    return stmt.all(...args) as any[];
+    return stmt.all(...sanitizedArgs) as any[];
   }
   return [];
 }

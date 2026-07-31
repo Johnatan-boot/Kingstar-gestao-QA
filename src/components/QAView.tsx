@@ -143,91 +143,30 @@ export function QAView({ items, onRefresh }: { items: InventoryItem[], onRefresh
   // Dados Locais em Memória (com persistência no localStorage) para CAPA, Quarentena e Metrologia
   const [capaActions, setCapaActions] = useState<CapaAction[]>(() => {
     const saved = localStorage.getItem('kingstar_qa_capa');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'CAPA-104',
-        title: 'Fornecedor Aços S/A com variação dimensional recorrente',
-        what: 'Exigir laudo metalúrgico em todo lote e realizar medição em 100% das barras na entrada',
-        who: 'João Silva (QA Inspetor)',
-        when: '2026-08-10',
-        why: 'Evitar parada de máquina por bitola fora de tolerância',
-        status: 'Em Andamento',
-        priority: 'Alta'
-      },
-      {
-        id: 'CAPA-105',
-        title: 'Caixas de parafuso chegando com umidade na embalagem',
-        what: 'Alterar especificação de embalagem para filme stretch duplo e sílica gel',
-        who: 'Marcos Almeida (Sup. QA)',
-        when: '2026-08-15',
-        why: 'Prevenir oxidação precoce dos fixadores no estoque',
-        status: 'Pendente',
-        priority: 'Média'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [quarantineItems, setQuarantineItems] = useState<QuarantineItem[]>(() => {
     const saved = localStorage.getItem('kingstar_qa_quarantine');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'QRT-001',
-        material_name: 'Chapa de Aço Inox 304 - 2mm',
-        lote: 'LOTE-2026-078',
-        quantidade: 45,
-        motivo: 'Aguardando laudo de composição química do fornecedor',
-        data_retencao: '29/07/2026',
-        responsavel: 'Carlos QA',
-        status: 'Em Análise'
-      },
-      {
-        id: 'QRT-002',
-        material_name: 'Rolamento de Esferas 6205',
-        lote: 'LOTE-2026-089',
-        quantidade: 20,
-        motivo: 'Ruído anormal no ensaio amostral (RNC-0012)',
-        data_retencao: '28/07/2026',
-        responsavel: 'João Silva',
-        status: 'Em Análise'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [instruments, setInstruments] = useState<MetrologyInstrument[]>(() => {
     const saved = localStorage.getItem('kingstar_qa_instruments');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'INST-01',
-        codigo: 'PAQ-DIG-01',
-        nome: 'Paquímetro Digital 150mm Mitutoyo',
-        faixa_medicao: '0 a 150 mm (Res. 0,01mm)',
-        ultima_calibracao: '15/01/2026',
-        proxima_calibracao: '15/01/2027',
-        status: 'Calibrado',
-        certificado: 'CERT-RBC-90412'
-      },
-      {
-        id: 'INST-02',
-        codigo: 'BAL-PREC-02',
-        nome: 'Balança Analítica de Precisão 500g',
-        faixa_medicao: '0 a 500 g (Res. 0,001g)',
-        ultima_calibracao: '10/08/2025',
-        proxima_calibracao: '10/08/2026',
-        status: 'Vencendo',
-        certificado: 'CERT-RBC-88102'
-      },
-      {
-        id: 'INST-03',
-        codigo: 'MIC-EXT-01',
-        nome: 'Micrômetro Externo 0-25mm',
-        faixa_medicao: '0 a 25 mm (Res. 0,001mm)',
-        ultima_calibracao: '12/03/2026',
-        proxima_calibracao: '12/03/2027',
-        status: 'Calibrado',
-        certificado: 'CERT-RBC-91203'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
+
+  const handleResetLocalData = () => {
+    if (confirm('Deseja zerar todos os dados em 3-Plano CAPA, 4-Quarentena e 5-Instrumentos?')) {
+      localStorage.removeItem('kingstar_qa_capa');
+      localStorage.removeItem('kingstar_qa_quarantine');
+      localStorage.removeItem('kingstar_qa_instruments');
+      setCapaActions([]);
+      setQuarantineItems([]);
+      setInstruments([]);
+      toast.success('3-Plano CAPA, 4-Quarentena e 5-Instrumentos foram zerados com sucesso!');
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('kingstar_qa_capa', JSON.stringify(capaActions));

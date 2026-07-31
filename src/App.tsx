@@ -415,18 +415,23 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
+      let res;
       if (editingId) {
-        await fetch('/api/inventory/' + editingId, {
+        res = await fetch('/api/inventory/' + editingId, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         });
       } else {
-        await fetch('/api/inventory', {
+        res = await fetch('/api/inventory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         });
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || errData.details || 'Erro ao salvar material no servidor');
       }
       setIsFormOpen(false);
       import('react-hot-toast').then(m => m.default.success(editingId ? 'Material atualizado com sucesso!' : 'Material cadastrado com sucesso!'));
@@ -434,8 +439,9 @@ function InventoryView({ onRefresh }: { onRefresh: () => void }) {
       setFormData({ fornecedor: '', material: '', medida: '', quantidade: 0, quantidade_minima: 10, quantidade_maxima: 100, status: 'Ativo' });
       await fetchInventory();
       onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      import('react-hot-toast').then(m => m.default.error(e.message || 'Erro ao comunicar com servidor'));
     } finally {
       setIsSubmitting(false);
     }
