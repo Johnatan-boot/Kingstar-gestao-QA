@@ -221,3 +221,27 @@ export async function initDB() {
     console.error('Failed to initialize schema:', err);
   }
 }
+
+export async function resetDatabase() {
+  getDB();
+  const tables = ['qa_non_conformities', 'qa_inspections', 'purchase_requests', 'movements', 'inventory'];
+  if (pool) {
+    await pool.execute('SET FOREIGN_KEY_CHECKS = 0');
+    for (const table of tables) {
+      try {
+        await pool.execute(`TRUNCATE TABLE ${table}`);
+      } catch (e) {
+        await pool.execute(`DELETE FROM ${table}`);
+      }
+    }
+    await pool.execute('SET FOREIGN_KEY_CHECKS = 1');
+  } else if (sqliteDb) {
+    sqliteDb.exec('PRAGMA foreign_keys = OFF;');
+    for (const table of tables) {
+      sqliteDb.exec(`DELETE FROM ${table};`);
+    }
+    sqliteDb.exec(`DELETE FROM sqlite_sequence WHERE name IN ('qa_non_conformities', 'qa_inspections', 'purchase_requests', 'movements', 'inventory');`);
+    sqliteDb.exec('PRAGMA foreign_keys = ON;');
+  }
+}
+

@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { initDB, dbAll, dbRun, dbGet, isMySQL } from './src/backend/db.js';
+import { initDB, dbAll, dbRun, dbGet, isMySQL, resetDatabase } from './src/backend/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -276,6 +276,16 @@ async function createServer() {
       res.json({ message: 'RNC updated' });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update RNC' });
+    }
+  });
+
+  app.post('/api/database/reset', async (req, res) => {
+    try {
+      await resetDatabase();
+      res.json({ message: 'Banco de dados zerado com sucesso.' });
+    } catch (error: any) {
+      console.error('Error resetting database:', error);
+      res.status(500).json({ error: 'Falha ao zerar banco de dados', details: String(error) });
     }
   });
 
