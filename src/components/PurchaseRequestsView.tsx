@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Search, Plus, Package } from 'lucide-react';
-import { InventoryItem } from '../App';
-import { cn } from '../App';
+import { InventoryItem } from '../lib';
+import { cn } from '../lib';
 
 interface PurchaseRequest {
   id: number;

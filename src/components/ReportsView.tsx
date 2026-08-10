@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, AlertTriangle, CheckCircle, Package } from 'lucide-react';
-import { InventoryItem, Movement } from '../App';
+import { InventoryItem, Movement } from '../lib';
 
 export function ReportsView({ items, movements }: { items: InventoryItem[], movements: Movement[] }) {
   const ruptureItems = items.filter(i => i.quantidade <= (i.quantidade_minima || 10));

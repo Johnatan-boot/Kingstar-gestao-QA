@@ -3,6 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -181,6 +182,31 @@ export async function initDB() {
       await addColumnMySQL('movements', 'solicitacao', 'VARCHAR(255)');
       await addColumnMySQL('movements', 'status', 'VARCHAR(255)');
 
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS departamentos (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          codigo VARCHAR(50) UNIQUE NOT NULL,
+          nome VARCHAR(255) NOT NULL,
+          descricao TEXT,
+          responsavel VARCHAR(255),
+          status VARCHAR(255) DEFAULT 'Ativo',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          nome VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          departamento VARCHAR(255) NOT NULL,
+          cargo VARCHAR(255),
+          status VARCHAR(255) DEFAULT 'Ativo',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('MySQL schema initialized and validated.');
     } else if (sqliteDb) {
       sqliteDb.exec(`
@@ -264,7 +290,74 @@ export async function initDB() {
       addColumnSQLite('movements', 'solicitacao', 'TEXT');
       addColumnSQLite('movements', 'status', 'TEXT');
 
+      sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS departamentos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          codigo TEXT UNIQUE NOT NULL,
+          nome TEXT NOT NULL,
+          descricao TEXT,
+          responsavel TEXT,
+          status TEXT DEFAULT 'Ativo',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      sqliteDb.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nome TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          departamento TEXT NOT NULL,
+          cargo TEXT,
+          status TEXT DEFAULT 'Ativo',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('SQLite schema initialized and validated.');
+    }
+
+    // Check and seed default departments
+    const existingDepts = await dbAll('SELECT id FROM departamentos LIMIT 1');
+    if (!existingDepts || existingDepts.length === 0) {
+      console.log('Seeding default departments (Administrativo, Operacional, Qualidade)...');
+      await dbRun(
+        'INSERT INTO departamentos (codigo, nome, descricao, responsavel, status) VALUES (?, ?, ?, ?, ?)',
+        ['ADM-01', 'Administrativo', 'Gestão Estratégica, Cadastros e Supervisão Geral do Almoxarifado', 'Gerente Administrativo', 'Ativo']
+      );
+      await dbRun(
+        'INSERT INTO departamentos (codigo, nome, descricao, responsavel, status) VALUES (?, ?, ?, ?, ?)',
+        ['OPR-02', 'Operacional', 'Logística, Movimentações de Entrada/Saída e Armazenagem', 'Almoxarife Líder', 'Ativo']
+      );
+      await dbRun(
+        'INSERT INTO departamentos (codigo, nome, descricao, responsavel, status) VALUES (?, ?, ?, ?, ?)',
+        ['QA-03', 'Qualidade', 'Inspeções de Qualidade, Planos CAPA, Quarentena e Instrumentos', 'Analista de QA', 'Ativo']
+      );
+      console.log('Default departments seeded successfully.');
+    }
+
+    // Check and seed default users
+    const existingUsers = await dbAll('SELECT id FROM users LIMIT 1');
+    if (!existingUsers || existingUsers.length === 0) {
+      console.log('Seeding default departmental users with bcrypt password hashing...');
+      const adminHash = bcrypt.hashSync('admin123', 10);
+      const operHash = bcrypt.hashSync('operacional123', 10);
+      const qaHash = bcrypt.hashSync('qualidade123', 10);
+
+      await dbRun(
+        'INSERT INTO users (nome, email, password_hash, departamento, cargo, status) VALUES (?, ?, ?, ?, ?, ?)',
+        ['Administrador Geral', 'admin@kingstar.com', adminHash, 'Administrativo', 'Gerente Administrativo', 'Ativo']
+      );
+      await dbRun(
+        'INSERT INTO users (nome, email, password_hash, departamento, cargo, status) VALUES (?, ?, ?, ?, ?, ?)',
+        ['Operador Logística', 'operacional@kingstar.com', operHash, 'Operacional', 'Almoxarife', 'Ativo']
+      );
+      await dbRun(
+        'INSERT INTO users (nome, email, password_hash, departamento, cargo, status) VALUES (?, ?, ?, ?, ?, ?)',
+        ['Inspetor de Qualidade', 'qualidade@kingstar.com', qaHash, 'Qualidade', 'Analista de QA', 'Ativo']
+      );
+      console.log('Default users seeded successfully: admin@kingstar.com, operacional@kingstar.com, qualidade@kingstar.com');
     }
   } catch (err) {
     console.error('Failed to initialize schema:', err);

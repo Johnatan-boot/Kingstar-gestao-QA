@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Box, Search, RefreshCw, Plus, Edit2, Trash2, Check, X, Menu, LayoutDashboard, Boxes, ArrowLeftRight, ShoppingCart, ShieldCheck, BarChart3, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { Activity, Box, Search, RefreshCw, Plus, Edit2, Trash2, Check, X, Menu, LayoutDashboard, Boxes, ArrowLeftRight, ShoppingCart, ShieldCheck, BarChart3, ChevronLeft, ChevronRight, Shield, LogOut, LogIn, User, UserPlus, Key, Users, Building2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -10,8 +10,48 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
 import { ReportsView } from './components/ReportsView';
 import { MovementsView } from './components/MovementsView';
 import { PurchaseRequestsView } from './components/PurchaseRequestsView';
-import { QAView } from './components/QAView';
+import { AuthModal } from './components/AuthModal';
+import { UsersAndDeptsView } from './components/UsersAndDeptsView';
 import { Toaster, toast } from 'react-hot-toast';
+
+class ErrorBoundary extends React.Component<{ fallback: React.ReactNode, children: React.ReactNode }, { hasError: boolean, error: any }> {
+  constructor(props: { fallback: React.ReactNode, children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 text-center bg-red-900/20 border border-red-500/50 rounded-lg">
+          <h2 className="text-xl font-bold text-red-500 mb-4">Erro ao carregar Módulo de Qualidade</h2>
+          <p className="text-red-400 mb-4">{this.state.error?.toString()}</p>
+          <pre className="text-left text-xs bg-black/50 p-4 rounded overflow-auto text-red-300">
+            {this.state.error?.stack}
+          </pre>
+          <button 
+            className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const QAView = React.lazy(() => import('qa_mfe/QAView'));
+
 
 // Types
 export type InventoryItem = {
@@ -46,6 +86,36 @@ type Stats = {
 };
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('kingstar_user');
+      return saved ? JSON.parse(saved) : {
+        id: 1,
+        nome: 'Administrador Geral',
+        email: 'admin@kingstar.com',
+        departamento: 'Administrativo',
+        cargo: 'Gerente Administrativo',
+        status: 'Ativo'
+      };
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('kingstar_user');
+    localStorage.removeItem('kingstar_token');
+    setCurrentUser(null);
+    toast.success('Sessão encerrada com sucesso! (Logout efetuado)');
+  };
+
+  const handleLoginSuccess = (user: any, token: string) => {
+    localStorage.setItem('kingstar_user', JSON.stringify(user));
+    localStorage.setItem('kingstar_token', token);
+    setCurrentUser(user);
+  };
+
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [isNavigating, setIsNavigating] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -66,7 +136,9 @@ export default function App() {
       const movementsData = await movementsRes.json();
       const itemsData = await itemsRes.json();
       
-      setStats(statsData.error ? null : statsData);
+      if (!statsData.error) {
+        setStats(statsData);
+      }
       setMovements(Array.isArray(movementsData) ? movementsData : []);
       setItems(Array.isArray(itemsData) ? itemsData : []);
       setLastSync(new Date().toLocaleTimeString());
@@ -113,7 +185,7 @@ export default function App() {
           <span className="font-bold tracking-tight text-lg">KINGSTAR <span className="text-[var(--color-kingstar-cyan)]">QA</span></span>
         </div>
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios'].map((tab) => (
+          {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios', 'Acessos & Segurança'].map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
@@ -129,13 +201,34 @@ export default function App() {
           ))}
         </nav>
         <div className="p-4 border-t border-[var(--border)]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-[var(--border)]"></div>
-            <div className="text-xs">
-              <p className="font-medium text-white">Admin User</p>
-              <p className="text-[#5a6a7a]">Supervisor QA</p>
+          {currentUser ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-[var(--color-kingstar-cyan)]/20 text-[var(--color-kingstar-cyan)] font-bold flex items-center justify-center text-xs shrink-0 border border-[var(--color-kingstar-cyan)]/40">
+                  {currentUser.nome.charAt(0)}
+                </div>
+                <div className="text-xs truncate">
+                  <p className="font-bold text-white truncate">{currentUser.nome}</p>
+                  <p className="text-[var(--color-kingstar-cyan)] text-[11px] font-semibold truncate">{currentUser.departamento}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 text-[#8b9dc3] hover:text-[var(--color-kingstar-red)] hover:bg-white/5 rounded transition-colors shrink-0"
+                title="Sair do Sistema (Logout)"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="w-full py-2 bg-[var(--color-kingstar-cyan)]/15 border border-[var(--color-kingstar-cyan)]/40 text-[var(--color-kingstar-cyan)] hover:bg-[var(--color-kingstar-cyan)]/25 text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <LogIn size={14} />
+              ENTRAR / CADASTRAR
+            </button>
+          )}
         </div>
       </aside>
 
@@ -159,7 +252,7 @@ export default function App() {
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-              {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios'].map((tab) => (
+              {['Dashboard', 'Estoque Geral', 'Movimentações', 'Solicitações de Compra', 'Qualidade (QA)', 'Relatórios', 'Acessos & Segurança'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => handleTabChange(tab)}
@@ -175,13 +268,34 @@ export default function App() {
               ))}
             </nav>
             <div className="p-4 border-t border-[var(--border)]">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border border-[var(--border)]"></div>
-                <div className="text-xs">
-                  <p className="font-medium text-white">Admin User</p>
-                  <p className="text-[#5a6a7a]">Supervisor QA</p>
+              {currentUser ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-[var(--color-kingstar-cyan)]/20 text-[var(--color-kingstar-cyan)] font-bold flex items-center justify-center text-xs shrink-0 border border-[var(--color-kingstar-cyan)]/40">
+                      {currentUser.nome.charAt(0)}
+                    </div>
+                    <div className="text-xs truncate">
+                      <p className="font-bold text-white truncate">{currentUser.nome}</p>
+                      <p className="text-[var(--color-kingstar-cyan)] text-[11px] font-semibold truncate">{currentUser.departamento}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-1.5 text-[#8b9dc3] hover:text-[var(--color-kingstar-red)] hover:bg-white/5 rounded transition-colors shrink-0"
+                    title="Sair (Logout)"
+                  >
+                    <LogOut size={16} />
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="w-full py-2 bg-[var(--color-kingstar-cyan)]/15 border border-[var(--color-kingstar-cyan)]/40 text-[var(--color-kingstar-cyan)] hover:bg-[var(--color-kingstar-cyan)]/25 text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <LogIn size={14} />
+                  ENTRAR / CADASTRAR
+                </button>
+              )}
             </div>
           </aside>
         </div>
@@ -204,10 +318,47 @@ export default function App() {
             <span className="text-white font-medium">{activeTab}</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1 bg-[var(--color-kingstar-green)]/10 border border-[var(--color-kingstar-green)]/30 text-[var(--color-kingstar-green)] text-[10px] uppercase font-bold rounded-full flex items-center gap-1.5">
+            <div className="hidden sm:flex px-3 py-1 bg-[var(--color-kingstar-green)]/10 border border-[var(--color-kingstar-green)]/30 text-[var(--color-kingstar-green)] text-[10px] uppercase font-bold rounded-full items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-kingstar-green)] animate-pulse"></span>
               Sistema Online
             </div>
+
+            {/* Auth Topbar section */}
+            {currentUser ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-[var(--border)]">
+                <span className="hidden md:inline-flex px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[var(--color-kingstar-cyan)]/15 border border-[var(--color-kingstar-cyan)]/30 text-[var(--color-kingstar-cyan)]">
+                  {currentUser.departamento}
+                </span>
+                <span className="text-xs font-semibold text-white hidden sm:inline">
+                  {currentUser.nome}
+                </span>
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="px-2.5 py-1 text-xs bg-[#1e1e20] hover:bg-[#28282b] text-[#8b9dc3] hover:text-white rounded border border-[var(--border)] transition-colors flex items-center gap-1 font-semibold"
+                  title="Trocar usuário ou visualizar acessos"
+                >
+                  <User size={13} />
+                  <span className="hidden lg:inline">Trocar Conta</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 bg-[var(--color-kingstar-red)]/10 hover:bg-[var(--color-kingstar-red)]/20 border border-[var(--color-kingstar-red)]/40 text-[var(--color-kingstar-red)] text-xs font-bold rounded transition-colors flex items-center gap-1.5 shadow-sm"
+                  title="Fazer Logout / Sair do Sistema"
+                >
+                  <LogOut size={14} />
+                  <span>Sair (Logout)</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-3.5 py-1.5 bg-[var(--color-kingstar-yellow)] text-black font-extrabold text-xs uppercase tracking-wider rounded hover:opacity-95 transition-all shadow-[0_0_15px_rgba(250,204,21,0.25)] flex items-center gap-1.5"
+              >
+                <LogIn size={14} />
+                Entrar / Cadastrar
+              </button>
+            )}
+
             <button onClick={fetchData} className="p-2 text-[#5a6a7a] hover:text-white transition-colors" title="Refresh Data">
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -236,9 +387,16 @@ export default function App() {
               {activeTab === 'Estoque Geral' && <InventoryView onRefresh={fetchData} />}
               {activeTab === 'Movimentações' && <MovementsView movements={movements} items={items} onRefresh={fetchData} />}
               {activeTab === 'Solicitações de Compra' && <PurchaseRequestsView onRefreshParent={fetchData} />}
-              {activeTab === 'Qualidade (QA)' && <QAView items={items} onRefresh={fetchData} />}
+              {activeTab === 'Qualidade (QA)' && (
+                <ErrorBoundary fallback={<div className="p-8 text-center text-red-500">Erro.</div>}>
+                  <React.Suspense fallback={<div className="p-8 text-center text-[#8b9dc3]">Carregando Módulo de Qualidade (MFE)...</div>}>
+                    <QAView items={items} onRefresh={fetchData} />
+                  </React.Suspense>
+                </ErrorBoundary>
+              )}
               {activeTab === 'Relatórios' && <ReportsView items={items} movements={movements} />}
-              {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Qualidade (QA)' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && (
+              {activeTab === 'Acessos & Segurança' && <UsersAndDeptsView currentUser={currentUser} onUserUpdate={fetchData} />}
+              {activeTab !== 'Dashboard' && activeTab !== 'Estoque Geral' && activeTab !== 'Solicitações de Compra' && activeTab !== 'Qualidade (QA)' && activeTab !== 'Relatórios' && activeTab !== 'Movimentações' && activeTab !== 'Acessos & Segurança' && (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] glass-panel rounded-lg border border-[var(--border)] border-dashed p-8 text-center bg-[#1a1a1a]/50">
                   <div className="w-16 h-16 rounded-full bg-[var(--color-kingstar-cyan)]/10 flex items-center justify-center mb-4">
                     <Box size={32} className="text-[var(--color-kingstar-cyan)] opacity-70" />
@@ -268,6 +426,12 @@ export default function App() {
             REAL-TIME UPDATES
           </div>
         </footer>
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
       </main>
     </div>
   );

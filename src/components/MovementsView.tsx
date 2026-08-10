@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { InventoryItem, Movement } from '../App';
+import { InventoryItem, Movement } from '../lib';
 import { RefreshCw, Search, Plus, ArrowUpRight, ArrowDownRight, Package, X } from 'lucide-react';
-import { cn } from '../App';
+import { cn } from '../lib';
 
 export function MovementsView({ movements, items, onRefresh }: { movements: Movement[], items: InventoryItem[], onRefresh: () => void }) {
   const [isFormOpen, setIsFormOpen] = useState(false);

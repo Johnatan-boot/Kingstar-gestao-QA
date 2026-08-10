@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { InventoryItem } from '../App';
-import { cn } from '../App';
+import { InventoryItem } from '../lib';
+import { cn } from '../lib';
 import { 
   ClipboardCheck, 
   AlertTriangle, 
@@ -87,7 +87,7 @@ interface MetrologyInstrument {
   certificado: string;
 }
 
-export function QAView({ items, onRefresh }: { items: InventoryItem[], onRefresh: () => void }) {
+export default function QAView({ items, onRefresh }: { items: InventoryItem[], onRefresh: () => void }) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'inspections' | 'rncs' | 'capa' | 'quarantine' | 'metrology'>('dashboard');
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [rncs, setRncs] = useState<RNC[]>([]);
@@ -460,7 +460,7 @@ export function QAView({ items, onRefresh }: { items: InventoryItem[], onRefresh
 
                 <div className="space-y-1 text-xs font-medium border-t border-black/20 pt-2">
                   <p><strong>MATERIAL:</strong> {selectedInspectionForLabel.material_name}</p>
-                  <p><strong>INSPECIONADO:</strong> {selectedInspection.quantidade_inspecionada} | <strong>APROVADO:</strong> {selectedInspectionForLabel.quantidade_aprovada} | <strong>REJ:</strong> {selectedInspectionForLabel.quantidade_rejeitada}</p>
+                  <p><strong>INSPECIONADO:</strong> {selectedInspectionForLabel.quantidade_inspecionada} | <strong>APROVADO:</strong> {selectedInspectionForLabel.quantidade_aprovada} | <strong>REJ:</strong> {selectedInspectionForLabel.quantidade_rejeitada}</p>
                   <p><strong>TIPO:</strong> {selectedInspectionForLabel.tipo} • <strong>DATA:</strong> {new Date(selectedInspectionForLabel.created_at).toLocaleDateString('pt-BR')}</p>
                   <p><strong>INSPETOR:</strong> {selectedInspectionForLabel.inspector || 'QA Técnico'}</p>
                 </div>

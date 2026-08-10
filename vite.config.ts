@@ -1,11 +1,25 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
+import federation from '@originjs/vite-plugin-federation';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(), 
+      tailwindcss(),
+      federation({
+        name: 'host',
+        remotes: {
+          qa_mfe: '/mfe/assets/remoteEntry.js'
+        },
+        shared: ['react', 'react-dom', 'lucide-react', 'react-hot-toast']
+      })
+    ],
+    build: {
+      target: 'esnext'
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
